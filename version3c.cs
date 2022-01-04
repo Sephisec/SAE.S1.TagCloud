@@ -8,7 +8,7 @@ class nuageMots{
 		//Récupérer tous les fichiers
 		string[] files=Directory.GetFiles("./txt");
 		//lecture d'un des fichiers du répertoire
-		string[] words=readFile(files[2],false);
+		string[] words=readFile(files[0],false);
 		//Récupération des racines du fichier + Liste des historiques de chaque mot
 		List<List<string>> wordRoots = wordEndingSteps(words);
 		// Construction du dictionnaire d'occurrences des racines et des mots de base

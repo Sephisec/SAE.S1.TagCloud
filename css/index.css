@@ -1,0 +1,103 @@
+/************************
+ * Body: on veut une page non scrollable,
+ qui prend toute la place à l'écran
+ ************************/
+body{
+    min-height: 100vh;
+    font-family: 'Ubuntu', sans-serif;
+    /*Petit trick:
+    le flex va prendre toute la place disponible en colonne*/
+    display: flex;
+    flex-direction: column;
+}
+
+/************************
+ * Milieu de page
+ ************************/
+/*Main: Flex en ligne (Section - imgWrapper)*/
+ main{
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: row;
+    flex-grow: 1;
+}
+/*Section: Flex en colonne (h1 - p - button)*/
+main > section{
+    margin-top: 50px;
+    margin-left: 200px;
+    display: flex;
+    flex-grow: 1;
+    align-items: flex-start;
+    flex-direction: column;
+}
+/*Titre principal*/
+h1 {
+    font-size: 5em;
+    font-weight: 400;
+    text-align: left;
+    margin: 0 0 .2em 0;
+}
+/*Paragraphe descriptino*/
+h1 + p {
+    font-size: 1.8em;
+    font-weight:300;
+    margin-bottom: 2em;
+}
+/*Lien du boutons (plus grand que dans l'en-tête)*/
+p + a {
+    font-size: 2em;
+}
+
+/************************
+ * Images
+ ************************/
+/*div: Flex en colonne flex-end: On met le contenu (la div image)
+tout en bas sur l'axe vertical
+grow 1: prend toute la place possible dans le main*/
+div.imgWrapper{
+    flex-grow: 1;
+    flex-direction: column;
+    display: flex;
+    justify-content: flex-end;
+}
+/*div d'image:
+grow 1: Prend toute la place possible dans imgWrapper
+contain: le background est contenu dans la div*/
+div.president{
+    background-image: url(../img/blurSarko.png);
+    flex-grow: 1;
+    max-height: 80vh;
+    min-width: 50vw;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: right;
+}
+/*Image en haut à gauche*/
+.shape1{
+    position: absolute;
+    max-height: 10vh;
+    top: 0;
+    left: 0;
+}
+
+/************************
+ * Écrans moyens
+ ************************/
+ @media all and (max-width: 1024px) { /*Tous les medias ayant une largeur < 1024px*/
+    body{
+        min-height: auto;
+    }
+
+	main {
+		flex-direction: column;
+	}
+
+    section{
+        min-height: 30vh;
+    }
+
+    div.imgWrapper{
+        min-height: 70vh;
+    }
+}

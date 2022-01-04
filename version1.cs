@@ -32,6 +32,7 @@ class nuageMots{
 		char[] separators={'\n','\r','!','#','(',')',',','"','«','»','.','/',':',';','?','[',']','`',' ','-','’'};
 		sr = File.OpenText(path);
 		words=sr.ReadToEnd().ToLower().Split(separators);
+		sr.Close();
 		return words;
 	}
 

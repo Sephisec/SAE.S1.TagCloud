@@ -8,7 +8,7 @@ class nuageMots{
 		//Récupérer tous les fichiers
 		string[] files=Directory.GetFiles("./txt");
 		//lecture d'un des fichiers du répertoire
-		string[] words=readFile(files[1],false);
+		string[] words=readFile(files[0],false);
 		//Récupération des racines du fichier
 		wordEndingSteps(words);
 		//Construction du dictionnaire d'occurrences
@@ -29,16 +29,21 @@ class nuageMots{
 		*	param:	path:		string:			chemin d'accès du fichier à ouvrir
 		*			byLine:		bool:			(v3a): indique qu'on veut un tableau de lignes
 		*	local:	sr:			StreamReader:	permet d'accéder au contenu du fichier
+		*			words:		string[]:		tableau des string
 		*			separators: char[]:			tableau des caractères de ponctuation
-		*	return:				string[]:		tableau des string en minuscule sans ponctuation
+		*	return:	words:		string[]:		tableau des string
 		*	[Note]:	StringSplitOptions.RemoveEmptyEntries:	permet de supprimer les string vides
 		*/
-		StreamReader sr;
-		sr = File.OpenText(path);
+		StreamReader sr=File.OpenText(path);
+		string[] words;
 		if(byLine)
-			return sr.ReadToEnd().Split('\n', StringSplitOptions.RemoveEmptyEntries);
-		char[] separators={'\n','\r','!','#','(',')',',','"','«','»','.','/',':',';','?','[',']','`',' ','-','’'};
-		return sr.ReadToEnd().ToLower().Split(separators, StringSplitOptions.RemoveEmptyEntries);
+			words = sr.ReadToEnd().Split('\n', StringSplitOptions.RemoveEmptyEntries);
+		else{
+			char[] separators={char.Parse("'"),'%','*','°','–','0','1','2','3','4','5','6','7','8','9','\n','\r','\t','!','#','(',')',',','"','«','»','.','/',':',';','?','[',']','`',' ','-','’','“','”','„','…'};
+			words = sr.ReadToEnd().ToLower().Split(separators, StringSplitOptions.RemoveEmptyEntries);
+		}
+		sr.Close();
+		return words;
 	}
 
 	public static Dictionary<string,int> dictBuild(string[] words){

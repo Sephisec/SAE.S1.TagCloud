@@ -8,7 +8,7 @@ class nuageMots{
 		//Récupérer tous les fichiers
 		string[] files=Directory.GetFiles("./txt");
 		//lecture d'un des fichiers du répertoire
-		string[] words=readFile(files[1]);
+		string[] words=readFile(files[0]);
 		//Construction du dictionnaire d'occurrences
 		Dictionary<string,int> occurrences = dictBuild(words);
 		//Suppression des mots "inutiles"
@@ -34,6 +34,7 @@ class nuageMots{
 		char[] separators={'\n','\r','!','#','(',')',',','"','«','»','.','/',':',';','?','[',']','`',' ','-','’'};
 		sr = File.OpenText(path);
 		words=sr.ReadToEnd().ToLower().Split(separators);
+		sr.Close();
 		return words;
 	}
 

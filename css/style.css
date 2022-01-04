@@ -1,0 +1,149 @@
+/*Stylesheet commune*/
+
+/************************
+ * Global
+ ************************/
+/*Cacher la scrollbar*/
+::-webkit-scrollbar {
+    display: none; /*Chrome, Safari and Opera */
+}
+html {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+}
+/*Body (marges, fond, police)*/
+body{
+    padding: 0;
+    margin: 0;
+    background-color: #27282C;
+    color: white;
+    font-family: 'Azeret Mono', monospace;
+    font-weight: 400;
+}
+/*Marge sur les côtés (sur le main pour ne pas avoir de marge sur le pied de page)*/
+main{
+    margin: 0 8rem;
+}
+
+/************************
+ * Headers
+ ************************/
+/*Le header de l'en-tête
+Header enfant direct de body
+Police différente juste pour l'en-tête*/
+body > header {
+    font-family: 'Ubuntu', sans-serif;
+    justify-content: space-between;
+    align-items: center;
+    display: flex;
+    height: 100px;
+}
+/*Liens de l'entête*/
+body > header a {
+    padding: 1em;
+    font-size: 1.5em;
+}
+
+/************************
+ * Titres
+ ************************/
+/*Les titres des pages et sections*/
+h1 {
+    font-size: 2em;
+    text-align: center;
+}
+/*Titre des articles*/
+h2 {
+    text-align: center;
+}
+
+/************************
+ * Listes
+ ************************/
+/*Suppresion des puces*/
+ul {
+    list-style: none;
+}
+/*Liste de liens dans l'en-tête*/
+header ul{
+    display: flex;
+    margin: 0;
+    padding: 0;
+}
+
+/************************
+ * Liens
+ ************************/
+/*On enlève le formatage de base des liens*/
+a {
+    color: inherit; /*Récupère la couleur du parent, ici le blanc*/
+    text-decoration: none;
+    transition: color 200ms;
+}
+/*Animation de survol des liens*/
+a:hover {
+    transition: color 200ms;
+    color: rgb(139, 131, 131);
+}
+
+/************************
+ * Bouton orange
+ ************************/
+.button{
+    background-color: #C8590F;
+    border-radius: 0.3em;
+    padding: .9rem 1.2rem;
+    max-width: 5em;
+    transition: background-color 300ms;
+}
+/*Animation boutons*/
+.button:hover{
+    color: inherit;
+    background-color:lightsalmon;
+    transition: background-color 300ms;
+
+
+}
+
+/************************
+ * Footer
+ ************************/
+/*Footer pied de page de tout sauf index*/
+footer.pageFooter {
+    background-color: #000000;
+    width: 100%;
+    height: 300px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+/*Footer mais sans le dernier paragraphe*/
+.footerWrapper {
+    display: flex;
+    justify-content: space-between;
+    flex-grow: 1;
+    font-size: 1.5em;
+    text-align: end;
+}
+/*Elements d'une liste dans le wrapper*/
+.footerWrapper li {
+    margin: 10px;
+}
+/*Paragraphe de fin (faux copyright)*/
+footer.pageFooter > p{
+    margin: 25px auto;
+}
+
+@media all and (max-width: 1024px) {
+/*En-tête des pages*/
+    header p,  header ul {
+        font-size: 1.3em;
+    }
+    main {
+        min-height: 80vh;
+    }
+
+    footer.pageFooter {
+        min-height: 20vh;
+    }
+}

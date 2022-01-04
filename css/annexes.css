@@ -1,0 +1,62 @@
+/*Stylesheet pour les pages annexes (A propos, Tutoriel et Contact)*/
+
+/************************
+ * Global
+ ************************/
+main {
+    display: flex;
+    flex-direction: column;
+}
+
+/************************
+ * Colonne de "tiles"
+ ************************/
+/*Container*/
+section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    
+}
+/*Articles*/
+article {
+    display: flex;
+    margin: 50px;
+}
+/*Boite de txt de description (h2,p)*/
+div.description {
+    display: flex;
+    flex-direction: column;
+    width: 500px;
+    text-align: left;
+    padding: 50px 50px 0 0;
+    font-size: 1.5em;
+}
+h2, p {
+    text-align: left;
+    margin: 0 0 0 15px;
+}
+
+/*Ombre des carrés (images ou listes (dans tutoriel)*/
+section img:first-child, section ul:first-child{
+    box-shadow: 56px 60px 34px rgba(0, 0, 0, 0.25);
+}
+/************************
+ * Images
+ ************************/
+img {
+    width: 500px;
+}
+/*Si l'image doit être animée*/
+img.animation {
+    background-color: white;
+    transition: transform 300ms,  background-color 300ms;
+}
+
+/*Animation*/
+img.animation:hover {
+    background-color: #C8590F;
+    transform:scale(1.05);
+    transition: transform 300ms,  background-color 300ms;
+}

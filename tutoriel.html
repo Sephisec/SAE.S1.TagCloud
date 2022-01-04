@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="fr">
+	<head>
+		<meta charset="utf-8">
+		<link href="css/style.css" rel="stylesheet">
+		<link href="css/annexes.css" rel="stylesheet">
+		<link href="css/results.css" rel="stylesheet">
+		<title>A propos - TagCloud</title>
+	</head>
+	<body>
+		<header>
+			<p>
+				<a href="./index.html">TagCloud.fr</a>
+			</p>
+			<nav>
+				<ul>
+					<li><a href="./apropos.html">A propos</a></li>
+					<li><a href="./tutoriel.html" class="button">Tutoriel</a></li>
+					<li><a href="./contact.html">Contact</a></li>
+				</ul>
+			</nav>
+		</header>
+		<main>
+			<section>
+				<h1>Tutoriel</h1>
+				<article>
+					<img src="img/book.jpg" alt="Couverture du livre: Le Temps des Tempêtes">
+					<div class="description">
+						<h2>Choisir les textes</h2>
+						<p>Récuperez le contenu à analyser au format .txt.
+							<br>Vous pouvez faire votre choix sur <a href="wikisource.org">Wikisource</a> par exemple.</p>
+					</div>
+				</article>
+				<article>
+					<img src="img/arbo.png" alt="Arborescence du projet">
+					<div class="description">
+						<h2>Déplacer les fichiers</h2>
+						<p>Déplacez ensuite les fichiers obtenus dans le répertoire "txt" de l'outil.
+						<br>
+						Le nom de votre fichier doit être le nom de l'oeuvre à analyser.
+						L'arborescence du répertoire devrait ressembler à l'image ci-contre.
+						</p>
+					</div>
+				</article>
+				<article>
+					<img src="img/console.png" alt="Screenshot de la console">
+					<div class="description">
+						<h2>Executer tagcloud.exe</h2>
+						<p>Ouvrez le terminal Linux et entrez la commande "mono tagcloud.exe" ou éxecutez-le comme vous le faites habituellement.
+						<br>Attendez que le programme s'execute.
+						<br>Il vous sera demandé d'entrer le prénom et le nom de l'auteur.
+						</p>
+					</div>
+				</article>
+				<article>
+					<ul class="wordCloud" data-show-value>
+						<li data-weight="8">juge</li>
+						<li data-weight="15">violences</li>
+						<li data-weight="12">sarkozy</li>
+						<li data-weight="6">police</li>
+						<li data-weight="7">peut</li>
+						<li data-weight="2">tout</li>
+						<li data-weight="14">loi</li>
+						<li data-weight="4">être</li>
+						<li data-weight="5">ans</li>
+						<li data-weight="11">nicolas</li>
+						<li data-weight="9">ministre</li>
+						<li data-weight="10">peine</li>
+						<li data-weight="1">plus</li>
+						<li data-weight="3">délinquance</li>
+						<li data-weight="13">prison</li>
+					</ul>
+					<div class="description">
+						<h2>Se rendre sur l'interface web</h2>
+						<p>Ouvrez index.html et cliquez sur "C'est parti".
+							<br>Les 15 mots les plus récurrents seront affichés sous forme de nuage de mots.
+							<br>Ci-contre le résultat de l'analyse de l'exemple.
+						</p>
+					</div>
+					</article>
+			</section>
+		</main>
+		<footer class="pageFooter">
+			<div class="footerWrapper">
+				<p><a href="./index.html">TagCloud.fr</a></p>
+				<ul>
+					<li>Tag cloud tool:	C#</li>
+					<li>Website:		HTML/CSS</li>
+				</ul>
+				<ul>
+					<li><a href="./apropos.html">A propos</a></li>
+					<li><a href="./tutoriel.html">Tutoriel</a></li>
+					<li><a href="./contact.html">Contact</a></li>
+				</ul>
+			</div>
+			<p>TagCloud. No Rights Reserved.</p>
+		</footer>
+	</body>
+</html>

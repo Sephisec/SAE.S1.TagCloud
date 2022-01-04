@@ -3,25 +3,35 @@ using System.IO;
 using System.Collections.Generic;
 //Pour le tri décroissant du dictionnaire par valeur
 using System.Linq;
-/**********************************************************************************************
+/*********************************************************************************************************
 *	Version 4:
+* 	Adapté au sujet 2				un nuage de mot par texte + un commun
+* 	ajout de generateHtmlPortion()	support HTML: génère pour chaque fichier une portion d'HTML
+*	ajout de fillTemplate()			support HTML: remplit le template avec les portions de code
+* 	ajout de synthesisUpdate()		support HTML: créé un dictionnaire commun à tous les textes
+* 									qui sera traité comme les autres dictionnaire
+* 	inTextStopWords()				récupère les mots entièrement en majuscule pour les supprimer (utiles
+* 									pour les pièces de théâtre)
 *	modification de Main()			appelle la fonction sur tous les fichiers du répertoire "./txt"
+* 									intègre les 4 fonctions précédentes
 * 									donne l'état d'avancée de l'analyse
-* 	modification de stopwords.txt	Ajout de mots non utiles à la compréhension
-*	ajout de inTextStopWords()		récupère des mots inutiles inhérents au texte
-* 	
-**********************************************************************************************/
+* 	modification de stopwords.txt	à partir des premiers résultats obtenus, modification manuelle
+*********************************************************************************************************/
 
 class nuageMots{
 
 	static void Main(){
 		//Récupérer tous les fichiers du dossier
 		string[] paths=Directory.GetFiles("./txt");
+		//Liste des parties du code HTML (une string par texte)
+		List<string> htmlParts=new List<string>();
+		//Dictionnaire commun à tous les textes (pour le nuage de texte commun)
+		Dictionary<string,int> synthesis = new Dictionary<string,int>();
 		//Pour chaque fichier texte
 		foreach(string path in paths){
 			//Récupération du nom du fichier, pour l'export
 			string filename=Path.GetFileNameWithoutExtension(path);
-			Console.WriteLine("Analyse de:" + filename);
+			Console.WriteLine("Analyse de: " + filename);
 			//lecture d'un fichiers du répertoire
 			Console.WriteLine("Découpage du fichier...");
 			string[] words=readFile(path,false);
@@ -41,13 +51,128 @@ class nuageMots{
 			//Suppression des mots "inutiles"
 			stopWordsClear(occFinal, "./asset/stopwords.txt");
 			stopWordsClear(occFinal, "./asset/inTextStopWords.txt");
-			//Affichage du dictionnaire
-			dictDisplay(occFinal);
-
+			//Mise à jour du dictionnaire commun
+			synthesisUpdate(synthesis,occFinal);
+			//Génération du code HTML pour ce texte
+			Console.WriteLine("Génération du code HTML pour ce fichier\n");
+			htmlParts.Add(generateHtmlPortion(occFinal,filename));
 		}
+		Console.WriteLine("Création du fichier HTML final");
+		htmlParts.Add(generateHtmlPortion(synthesis,"Nuage de mot commun"));
+		fillTemplate(htmlParts);
 		Console.WriteLine("Fin du programme");
 	}
 
+	public static void fillTemplate(List<string> htmlParts){
+		/*	fillTemplate:	proc
+		*	Crée une copie du fichier de template et complète
+		*	cette copie avec du code HTML
+		*	param:	htmlParts:	List<string>:	liste de code pour chaque texte
+		*	local:	author:	string:	"prénom nom" de l'auteur
+		*			sr:	StreamReader:	parcourt le fichier de template
+		*			sw:	SreamWriter:	ajoute le code récupéré par le StreamReader
+		*								et le code contenu dans htmlParts
+		*			line:	string:	string temporaire pour le parcours
+		*			i:	int:	indice de parcours de htmlParts
+		*	return:	void
+		*/
+		//Récupération de l'auteur
+		Console.WriteLine("Entrer le Prénom, Nom de l'auteur:");
+		string author = Console.ReadLine();
+		//Création du fichier de sortie
+		if(File.Exists("results.html")){
+			File.Delete("results.html");
+		}
+		StreamReader sr=File.OpenText("template.html");
+		StreamWriter sw=File.CreateText("results.html");
+		string line;
+		//Recherche du premier point d'arrêt
+		while( (line=sr.ReadLine())!="\t\t\t<!--INSERT AUTHOR-->"){
+			sw.WriteLine(line);
+		}
+		//Insertion du premier titre
+		if(isVowel(author.ToLower()[0])){
+			sw.WriteLine("<h1>Analyse des textes d'"+author+"</h1>");
+		}
+		else{
+			sw.WriteLine("<h1>Analyse des textes de "+author+"</h1>");
+		}
+		//Recherche du deuxième point d'arrêt
+		while( (line=sr.ReadLine())!="\t\t\t\t<!--INSERT RESULTATS TEXTES-->"){
+			sw.WriteLine(line);
+		}
+		//Insertion de toutes les parties du code HTML (sauf la dernière, la synthèse)
+		int i;
+		for(i=0; i<htmlParts.Count-1; i++){
+			sw.WriteLine(htmlParts[i]);
+		}
+		//Recherche du dernier point d'arrêt
+		while( (line=sr.ReadLine())!="\t\t\t\t<!--INSERT SYNTHESE TEXTES-->"){
+			sw.WriteLine(line);
+		}
+		//Insertion du code HTML pour la partie synthèse
+		sw.WriteLine(htmlParts[i]);
+		//On termine le parcours (l'écriture des dernières lignes dans la copie)
+		while( (line=sr.ReadLine())!=null){
+			sw.WriteLine(line);
+		}
+		sr.Close();
+		sw.Close();
+	}
+
+	public static string generateHtmlPortion(Dictionary<string,int> Xdict, string displayName){
+		/*	generateHtmlPortion:	func:	strings
+		*	Génère pour un dictionnaire d'occurence de mots, le code HTML associé
+		*	param:	Xdict:	Dictionary<string,int>:	dictionnaire d'occurence
+		*			displayName:	string:						nom du fichier, à afficher
+		*	local:	outParts:		string:						code HTML pour un texte
+		*			RandomParts:	List<string>:				Liste temporaire. On lui ajoute les
+		*														les codes à la suite, mais il faut ensuite
+		*														la trier de manière aléatoire, ou sinon
+		*														le nuage de mot sera trié
+		*			rnd:			Random:						Génère un nombre aléatoire pour le tri
+		*			n:				int:						Permet de récupérer les 15 premiers mots du
+		*														dictionnaire trié par ordre décroissant
+		*			kvp:			KeyValuePair<string,int>:	Paire clef-valeur temporaire pour le parcours par ordre décroissant
+		*			temp:			var:						variable dans laquelle on récupère les éléments de la liste triée aléatoirement
+		*			str:			string:						string temporaire pour le parcours de temp. Ajoutée à OutParts à chaque tour de boucle
+		*	return:	outParts:		string:						code HTML pour un texte
+		*/
+		string outParts = "<article>\n<header>\n<h2>"+displayName+"</h2>\n</header>\n<ul class=\"wordCloud\" data-show-value>\n";
+		List<string> RandomParts = new List<string>();
+		Random rnd = new Random();
+		int n=1;
+		foreach(KeyValuePair<string,int> kvp in Xdict.OrderByDescending(key => key.Value)){
+			if(n==16){
+				break;
+			}
+			RandomParts.Add("<li data-weight=\""+n+"\">"+kvp.Key+"</li>\n");
+			n++;
+		}
+		var temp = RandomParts.OrderBy(x => rnd.Next(0,15));
+		foreach(string str in temp){
+			outParts+=str;
+		}
+		outParts+="</ul>\n</article>";
+		return outParts;
+	}
+
+	public static void synthesisUpdate(Dictionary<string,int> synthesis, Dictionary<string,int> occFinal){
+		/*	synthesisUpdate:	proc
+		*	Modifie un dictionnaire en le fusionnant avec un autre
+		*	param:	synthesis:	Dictionary<string,int>:		dictionnaire à modifier
+		*			occFinal:	Dictionary<string,int>:		dictionnaire à fusionner avec synthesis
+		*	local:	kvp:		KeyValuePair<string,int>:	Paire clef-valeur temporaire pour le parcours
+		*/
+		foreach(KeyValuePair<string,int> kvp in occFinal.OrderByDescending(key => key.Value)){
+			if(synthesis.ContainsKey(kvp.Key)){
+				synthesis[kvp.Key]+=kvp.Value;
+			}
+			else{
+				synthesis.Add(kvp.Key,kvp.Value);
+			}
+		}
+	}
 
 	public static Dictionary<string,Dictionary<string,int>> dictBuildStep1(List<List<string>> Xlist){
 		/*	dictBuildStep1:	func:	Dictionary<string,Dictionary<string,int>>
@@ -432,8 +557,7 @@ class nuageMots{
 		*	param:	Xdict:	Dictionary<string,int>:	dictionnaire trié de string et int
 		*	local:	kvp:	KeyValuePair<string,int>:		Paire clefs-valeurs pour le parcours
 		*/
-		var sample = Xdict.OrderByDescending(key => key.Value).Take(15);
-		foreach(KeyValuePair<string,int> kvp in sample){
+		foreach(KeyValuePair<string,int> kvp in Xdict){
 			Console.WriteLine(kvp.Key+": "+kvp.Value);
 		}
 	}
