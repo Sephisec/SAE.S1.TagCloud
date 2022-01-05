@@ -1,15 +1,16 @@
 using System;
 using System.IO;
 using System.Collections.Generic;
-//Pour le tri décroissant du dictionnaire par valeur
 using System.Linq;
 /**********************************************************************************************
 *	Version 4:
 *	modification de Main()			appelle la fonction sur tous les fichiers du répertoire "./txt"
 * 									donne l'état d'avancée de l'analyse
 * 	modification de stopwords.txt	Ajout de mots non utiles à la compréhension
+*	modification de stopWordsClear	prend en param un tableau et non plus un path
 *	ajout de inTextStopWords()		récupère des mots inutiles inhérents au texte
-* 	
+* 	ajout de wordModify()			simplifie la fonction wordEndingClear
+*	ajout de archivage()			simplifie la fonction wordEndingSteps
 **********************************************************************************************/
 
 class nuageMots{
@@ -26,7 +27,7 @@ class nuageMots{
 			Console.WriteLine("Découpage du fichier...");
 			string[] words=readFile(path,false);
 			//Récupération de "mots" inutiles (Numéro de chapitre, livre, auteur, nom en majuscule dans une pièce de théâtre)
-			inTextStopWords(words);
+			string[] inTextemptyWords = inTextStopWords(words);
 			//Tableau en minuscule
 			words=words.Select(str => str.ToLower()).ToArray();
 			//Récupération des racines du fichier + Liste des historiques de chaque mot
@@ -39,8 +40,9 @@ class nuageMots{
 			Console.WriteLine("Construction du dictionnaire final");
 			Dictionary<string,int> occFinal = dictBuildStep2(occDetailed);
 			//Suppression des mots "inutiles"
-			stopWordsClear(occFinal, "./asset/stopwords.txt");
-			stopWordsClear(occFinal, "./asset/inTextStopWords.txt");
+			string[] emptyWords = readFile("./asset/stopwords.txt", false);
+			stopWordsClear(occFinal, emptyWords);
+			stopWordsClear(occFinal, inTextemptyWords);
 			//Affichage du dictionnaire
 			dictDisplay(occFinal);
 
@@ -147,7 +149,7 @@ class nuageMots{
 		StreamReader sr=File.OpenText(path);
 		string[] words;
 		if(byLine)
-			words = sr.ReadToEnd().Split('\n', StringSplitOptions.RemoveEmptyEntries);
+			words = sr.ReadToEnd().Split(new char[] {'\n'}, StringSplitOptions.RemoveEmptyEntries);
 		else{
 			char[] separators={char.Parse("'"),'%','*','°','–','0','1','2','3','4','5','6','7','8','9','\n','\r','\t','!','#','(',')',',','"','«','»','.','/',':',';','?','[',']','`',' ','-','’','“','”','„','…'};
 			words = sr.ReadToEnd().Split(separators, StringSplitOptions.RemoveEmptyEntries);
@@ -156,37 +158,32 @@ class nuageMots{
 		return words;
 	}
 
-	public static void inTextStopWords(string[] Xtxt){
+	public static string[] inTextStopWords(string[] Xtxt){
 		/*	inTextStopWords:	proc
 		*	Cherche dans le texte des mots qui n'apportent rien
 		*	Pour une pièce de théâtre: Les mots entièrement en majuscule
-		*	Ecris ces mots dans un fichier, qui sera utilisé par stopWordsClear()
-		*	param:	Xtxt:	string[]:		tableau de mots
-		*	local:	sw:		StreamWriter:	Permet d'écrire les mots dans un fichier
+		*	param:	Xtxt:	string[]:		tableau de mots à analyser
+		*	local:	lst:	List<string>	stocke les mots à ignorer, ToLower
 		*			i:		int:			indice pour le parcours
+		*	return:	string[]:	lst composée d'éléments distincts, convertie en tableau
 		*/
-		if(File.Exists("./asset/inTextStopWords.txt")){
-			File.Delete("./asset/inTextStopWords.txt");
-		}
-		StreamWriter sw = File.CreateText("./asset/inTextStopWords.txt");
+		List<string> lst = new List<string>();
 		for(int i=0; i< Xtxt.Length; i++){
 			/*Si le mot est entièrement en majuscule*/
 			if(Xtxt[i].ToUpper()==Xtxt[i]){
-				sw.WriteLine(Xtxt[i].ToLower());
+				lst.Add(Xtxt[i].ToLower());
 			}
 		}
-		sw.Close();
+		return lst.Distinct().ToArray();
 	}
 
-	public static void stopWordsClear(Dictionary<string,int> Xdict, string path){
+	public static void stopWordsClear(Dictionary<string,int> Xdict, string[] stopWords){
 		/*	stopWordsClear:	proc
 		*	Supprime les mots vides du dictionnaire d'occurences
 		*	param:	Xdict:		Dictionary<string,int>:	dictionnaire trié d'occurrences
-		*			path:		string:							chemin d'accès du fichier de mots à supprimer
-		*	local:	stopWords:	string[]:						tableau de mots "vides"
-		*			stopWord:	string:							string temporaire pour le parcours
+		*			stopWords:	string[]:						tableau de mots "vides"
+		*	local:	stopWord:	string:							string temporaire pour le parcours
 		*/
-		string[] stopWords = readFile(path,false);
 		foreach(string stopWord in stopWords){
 			if(Xdict.ContainsKey(stopWord))
 				Xdict.Remove(stopWord);

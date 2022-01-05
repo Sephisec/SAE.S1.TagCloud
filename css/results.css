@@ -26,7 +26,7 @@ ul.wordCloud {
     justify-content: center;
     padding: 0;
     margin: 0;
-    transition: box-shadow 300ms;
+    box-shadow: 56px 60px 34px rgba(0, 0, 0, 0.25);
 }
 
 /*Elements du nuage*/
@@ -63,11 +63,6 @@ ul.wordCloud li {
 
 div.synthesis li {
     font-size: calc( (15 - var(--size)) * 0.25em + 1.3em);
-}
-/*Animation du nuager de mots*/
-ul.wordCloud:hover{
-    box-shadow: 56px 60px 34px rgba(0, 0, 0, 0.25);
-    transition: box-shadow 300ms;
 }
 
 /************************

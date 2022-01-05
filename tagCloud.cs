@@ -1,10 +1,9 @@
 using System;
 using System.IO;
 using System.Collections.Generic;
-//Pour le tri décroissant du dictionnaire par valeur
 using System.Linq;
 /*********************************************************************************************************
-*	Version 4:
+*	Version 4 avec support HTML:
 * 	Adapté au sujet 2				un nuage de mot par texte + un commun
 * 	ajout de generateHtmlPortion()	support HTML: génère pour chaque fichier une portion d'HTML
 *	ajout de fillTemplate()			support HTML: remplit le template avec les portions de code
@@ -15,12 +14,16 @@ using System.Linq;
 *	modification de Main()			appelle la fonction sur tous les fichiers du répertoire "./txt"
 * 									intègre les 4 fonctions précédentes
 * 									donne l'état d'avancée de l'analyse
+*	modification de stopWordsClear	prend en param un tableau et non plus un path
 * 	modification de stopwords.txt	à partir des premiers résultats obtenus, modification manuelle
+* 	ajout de wordModify()			simplifie la fonction wordEndingClear
+*	ajout de archivage()			simplifie la fonction wordEndingSteps
 *********************************************************************************************************/
 
 class nuageMots{
 
-	static void Main(){
+	static void Main()
+	{
 		//Récupérer tous les fichiers du dossier
 		string[] paths=Directory.GetFiles("./txt");
 		//Liste des parties du code HTML (une string par texte)
@@ -28,7 +31,8 @@ class nuageMots{
 		//Dictionnaire commun à tous les textes (pour le nuage de texte commun)
 		Dictionary<string,int> synthesis = new Dictionary<string,int>();
 		//Pour chaque fichier texte
-		foreach(string path in paths){
+		foreach(string path in paths)
+		{
 			//Récupération du nom du fichier, pour l'export
 			string filename=Path.GetFileNameWithoutExtension(path);
 			Console.WriteLine("Analyse de: " + filename);
@@ -64,7 +68,8 @@ class nuageMots{
 		Console.WriteLine("Fin du programme");
 	}
 
-	public static void fillTemplate(List<string> htmlParts){
+		public static void fillTemplate(List<string> htmlParts)
+		{
 		/*	fillTemplate:	proc
 		*	Crée une copie du fichier de template et complète
 		*	cette copie avec du code HTML
@@ -77,50 +82,44 @@ class nuageMots{
 		*			i:	int:	indice de parcours de htmlParts
 		*	return:	void
 		*/
-		//Récupération de l'auteur
-		Console.WriteLine("Entrer le Prénom, Nom de l'auteur:");
-		string author = Console.ReadLine();
-		//Création du fichier de sortie
-		if(File.Exists("results.html"))
-			File.Delete("results.html");
-		StreamReader sr=File.OpenText("template.html");
-		StreamWriter sw=File.CreateText("results.html");
-		string line;
-		//Recherche du premier point d'arrêt
-		while( (line=sr.ReadLine())!="\t\t\t<!--INSERT AUTHOR-->"){
-			sw.WriteLine(line);
+			Console.WriteLine("Entrer le Prénom, Nom de l'auteur:");
+			string author = Console.ReadLine();
+			//Création du fichier de sortie
+			if(File.Exists("results.html"))
+				File.Delete("results.html");
+			StreamReader sr=File.OpenText("template.html");
+			StreamWriter sw=File.CreateText("results.html");
+			string line;
+			int i=0;
+			while( (line=sr.ReadLine())!=null)
+			{
+				sw.WriteLine(line);
+				//Premier point d'arrêt (auteur)
+				if(line=="\t\t\t<!--INSERT AUTHOR-->")
+				{
+					if(isVowel(author.ToLower()[0]))
+						sw.WriteLine("<h1>Analyse des textes d'"+author+"</h1>");
+					else
+						sw.WriteLine("<h1>Analyse des textes de "+author+"</h1>");
+				}
+				//Recherche du deuxième point d'arrêt (textes)
+				if(line=="\t\t\t\t<!--INSERT RESULTATS TEXTES-->")
+				{
+					for(i=0; i<htmlParts.Count-1; i++)
+						sw.WriteLine(htmlParts[i]);
+				}
+				//Recherche du dernier point d'arrêt (synthèse)
+				if(line=="\t\t\t\t<!--INSERT SYNTHESE TEXTES-->")
+				{
+					sw.WriteLine(htmlParts[i]);
+				}
+			}
+			sr.Close();
+			sw.Close();
 		}
-		//Insertion du premier titre
-		if(isVowel(author.ToLower()[0])){
-			sw.WriteLine("<h1>Analyse des textes d'"+author+"</h1>");
-		}
-		else{
-			sw.WriteLine("<h1>Analyse des textes de "+author+"</h1>");
-		}
-		//Recherche du deuxième point d'arrêt
-		while( (line=sr.ReadLine())!="\t\t\t\t<!--INSERT RESULTATS TEXTES-->"){
-			sw.WriteLine(line);
-		}
-		//Insertion de toutes les parties du code HTML (sauf la dernière, la synthèse)
-		int i;
-		for(i=0; i<htmlParts.Count-1; i++){
-			sw.WriteLine(htmlParts[i]);
-		}
-		//Recherche du dernier point d'arrêt
-		while( (line=sr.ReadLine())!="\t\t\t\t<!--INSERT SYNTHESE TEXTES-->"){
-			sw.WriteLine(line);
-		}
-		//Insertion du code HTML pour la partie synthèse
-		sw.WriteLine(htmlParts[i]);
-		//On termine le parcours (l'écriture des dernières lignes dans la copie)
-		while( (line=sr.ReadLine())!=null){
-			sw.WriteLine(line);
-		}
-		sr.Close();
-		sw.Close();
-	}
 
-	public static string generateHtmlPortion(Dictionary<string,int> Xdict, string displayName){
+	public static string generateHtmlPortion(Dictionary<string,int> Xdict, string displayName)
+	{
 		/*	generateHtmlPortion:	func:	strings
 		*	Génère pour un dictionnaire d'occurence de mots, le code HTML associé
 		*	param:	Xdict:	Dictionary<string,int>:	dictionnaire d'occurence
@@ -141,37 +140,42 @@ class nuageMots{
 		List<string> RandomParts = new List<string>();
 		Random rnd = new Random();
 		int n=1;
-		foreach(KeyValuePair<string,int> kvp in Xdict.OrderByDescending(key => key.Value).Take(15)){
+		foreach(KeyValuePair<string,int> kvp in Xdict.OrderByDescending(key => key.Value).Take(15))
+		{
 			RandomParts.Add("<li data-weight=\""+n+"\">"+kvp.Key+"</li>\n");
 			n++;
 		}
 		//Query creation: "Tri" aléatoire de la liste, récupération dans une query
 		var temp = RandomParts.OrderBy(x => rnd.Next(0,15));
 		//Query execution 
-		foreach(string str in temp){outParts+=str;}
+		foreach(string str in temp)
+		{
+			outParts+=str;
+		}
 		//Ajout de la fin du code HTML pour ce texte
 		outParts+="</ul>\n</article>";
 		return outParts;
 	}
 
-	public static void synthesisUpdate(Dictionary<string,int> synthesis, Dictionary<string,int> occFinal){
+	public static void synthesisUpdate(Dictionary<string,int> synthesis, Dictionary<string,int> occFinal)
+	{
 		/*	synthesisUpdate:	proc
 		*	Modifie un dictionnaire en le fusionnant avec un autre
 		*	param:	synthesis:	Dictionary<string,int>:		dictionnaire à modifier
 		*			occFinal:	Dictionary<string,int>:		dictionnaire à fusionner avec synthesis
 		*	local:	kvp:		KeyValuePair<string,int>:	Paire clef-valeur temporaire pour le parcours
 		*/
-		foreach(KeyValuePair<string,int> kvp in occFinal.OrderByDescending(key => key.Value)){
-			if(synthesis.ContainsKey(kvp.Key)){
+		foreach(KeyValuePair<string,int> kvp in occFinal.OrderByDescending(key => key.Value))
+		{
+			if(synthesis.ContainsKey(kvp.Key))
 				synthesis[kvp.Key]+=kvp.Value;
-			}
-			else{
+			else
 				synthesis.Add(kvp.Key,kvp.Value);
-			}
 		}
 	}
 
-	public static Dictionary<string,Dictionary<string,int>> dictBuildStep1(List<List<string>> Xlist){
+	public static Dictionary<string,Dictionary<string,int>> dictBuildStep1(List<List<string>> Xlist)
+	{
 		/*	dictBuildStep1:	func:	Dictionary<string,Dictionary<string,int>>
 		*	Renvoie un dictionnaire de racines avec les mots de base qui ont
 		*	permis d'arriver à ces racines, ainsi que leurs nombres d'occurences
@@ -185,11 +189,13 @@ class nuageMots{
 		*	return:	occurences:	Dictionary<string,Dictionary<string,int>>:	Dictionnaire de racine, mot de base et occurence
 		*/
 		Dictionary<string,Dictionary<string,int>> occurrences = new Dictionary<string,Dictionary<string,int>>();
-		foreach(List<string> lst in Xlist){
+		foreach(List<string> lst in Xlist)
+		{
 			string baseWord=lst[0];
 			string radical=lst[1];
 			//Cas où le dico contient le radical final
-			if(occurrences.ContainsKey(radical)){
+			if(occurrences.ContainsKey(radical))
+			{
 				//Si pour ce radical on a le même mot de base que celui en cours (on doit incrémenter)
 				if(occurrences[radical].ContainsKey(baseWord))
 					occurrences[radical][baseWord]++;
@@ -198,7 +204,8 @@ class nuageMots{
 					occurrences[radical].Add(baseWord,1);
 			}
 			//Cas où on doit ajouter le radical et son mot de base au dico
-			else{
+			else
+			{
 				Dictionary<string,int> tempDict = new Dictionary<string,int>();
 				tempDict.Add(baseWord,1);
 				occurrences.Add(radical,tempDict);
@@ -207,7 +214,8 @@ class nuageMots{
 		return occurrences;
 	}
 
-	public static Dictionary<string,int> dictBuildStep2(Dictionary<string,Dictionary<string,int>> Xdict){
+	public static Dictionary<string,int> dictBuildStep2(Dictionary<string,Dictionary<string,int>> Xdict)
+	{
 		/*	dictBuildStep2:	func:	Dictionary<string,int>
 		*	A partir d'un dictionnaire de racines, de mots de base et de nombres
 		*	d'occurrences, construit un dictionnaire Dictionary<mot,nombreDOccurrence>.
@@ -234,14 +242,17 @@ class nuageMots{
 		*/
 		Dictionary<string,int> occurrences2 = new Dictionary<string,int>();
 		//Parcours racine par racine
-		foreach(KeyValuePair<string,Dictionary<string,int>> kvp1 in Xdict){
+		foreach(KeyValuePair<string,Dictionary<string,int>> kvp1 in Xdict)
+		{
 			//Parcours des association baseword-occurences
 			int totOcc=0;
 			int maxOcc=0;
 			string maxStr="";
-			foreach(KeyValuePair<string,int> kvp2 in kvp1.Value){
+			foreach(KeyValuePair<string,int> kvp2 in kvp1.Value)
+			{
 				//Recherche pour une racine le mot de base le plus récurrent
-				if(kvp2.Value>maxOcc){
+				if(kvp2.Value>maxOcc)
+				{
 					maxOcc=kvp2.Value;
 					maxStr=kvp2.Key;
 				}
@@ -252,7 +263,8 @@ class nuageMots{
 		return occurrences2;
 	}
 
-	public static string[] readFile(string path, bool byLine){
+	public static string[] readFile(string path, bool byLine)
+	{
 		/*	readFile:	func:	string[]
 		*	Renvoie un tableau à partir de strings
 		*	contenus dans un fichier, en supprimant
@@ -268,10 +280,11 @@ class nuageMots{
 		*/
 		StreamReader sr=File.OpenText(path);
 		string[] words;
+		//Selon les compilateurs la méthode Split requiert un char ou un char[]
 		if(byLine)
-			//Selon les compilateurs la méthode Split requiert un char ou un char[]
 			words = sr.ReadToEnd().Split(new char[] {'\n'}, StringSplitOptions.RemoveEmptyEntries);
-		else{
+		else
+		{
 			char[] separators={char.Parse("'"),'%','*','°','–','0','1','2','3','4','5','6','7','8','9','\n','\r','\t','!','#','(',')',',','"','«','»','.','/',':',';','?','[',']','`',' ','-','’','“','”','„','…'};
 			words = sr.ReadToEnd().Split(separators, StringSplitOptions.RemoveEmptyEntries);
 		}
@@ -279,39 +292,43 @@ class nuageMots{
 		return words;
 	}
 
-	public static string[] inTextStopWords(string[] Xtxt){
+	public static string[] inTextStopWords(string[] Xtxt)
+	{
 		/*	inTextStopWords:	proc
 		*	Cherche dans le texte des mots qui n'apportent rien
 		*	Pour une pièce de théâtre: Les mots entièrement en majuscule
-		*	Ecris ces mots dans un fichier, qui sera utilisé par stopWordsClear()
-		*	param:	Xtxt:	string[]:		tableau de mots
-		*	local:	lst:	List<string>	stocke les mots qui sont en majuscules
+		*	param:	Xtxt:	string[]:		tableau de mots à analyser
+		*	local:	lst:	List<string>	stocke les mots à ignorer, ToLower
 		*			i:		int:			indice pour le parcours
+		*	return:	string[]:	lst composée d'éléments distincts, convertie en tableau
 		*/
 		List<string> lst = new List<string>();
-		for(int i=0; i< Xtxt.Length; i++){
+		for(int i=0; i< Xtxt.Length; i++)
+		{
 			/*Si le mot est entièrement en majuscule*/
-			if(Xtxt[i].ToUpper()==Xtxt[i]){
+			if(Xtxt[i].ToUpper()==Xtxt[i])
 				lst.Add(Xtxt[i].ToLower());
-			}
 		}
 		return lst.Distinct().ToArray();
 	}
 
-	public static void stopWordsClear(Dictionary<string,int> Xdict, string[] stopWords){
+	public static void stopWordsClear(Dictionary<string,int> Xdict, string[] stopWords)
+	{
 		/*	stopWordsClear:	proc
 		*	Supprime les mots vides du dictionnaire d'occurences
 		*	param:	Xdict:		Dictionary<string,int>:	dictionnaire trié d'occurrences
 		*			stopWords:	string[]:						tableau de mots "vides"
 		*	local:	stopWord:	string:							string temporaire pour le parcours
 		*/
-		foreach(string stopWord in stopWords){
+		foreach(string stopWord in stopWords)
+		{
 			if(Xdict.ContainsKey(stopWord))
 				Xdict.Remove(stopWord);
 		}
 	}
 
-	public static List<List<string>> wordEndingSteps(string[] XWords){
+	public static List<List<string>> wordEndingSteps(string[] XWords)
+	{
 		/*	wordEndingSteps:	func:	List<List<string>>
 		*	Appelle la fonction de suppression de terminaisons
 		*	sur le tableau de mots avec les fichiers des 3 étapes
@@ -330,15 +347,15 @@ class nuageMots{
 		List<List<string>> archive = new List<List<string>>();
 		//Archivage du mot de base
 		archivage(archive,XWords);
-		foreach(string path in paths){
+		foreach(string path in paths)
 			XWords=wordEndingClear(XWords,"./asset/"+path);
-		}
 		//Archivage du radical final
 		archivage(archive,XWords);
 		return archive;
 	}
 
-	public static void archivage(List<List<string>> archive, string[] XWords){
+	public static void archivage(List<List<string>> archive, string[] XWords)
+	{
 		/*	archivage:	proc
 		*	Allège la fonction wordEndingSteps
 		*	Archive le mot de base (1ère condition) ou le radical après suppresion
@@ -348,19 +365,20 @@ class nuageMots{
 		*			XWords:		string[]:	tableau de mot du texte
 		*
 		*/
-		if(archive.Count==0){
+		if(archive.Count==0)
+		{
 			foreach(string word in XWords)
 				archive.Add(new List<string>{word});
 		}
-		else{
-			for(int i=0; i<XWords.Length;i++){
+		else
+		{
+			for(int i=0; i<XWords.Length;i++)
 				archive[i].Add(XWords[i]);
-			}
 		}
-
 	}
 
-	public static string[] wordEndingClear(string[] XWords, string path){
+	public static string[] wordEndingClear(string[] XWords, string path)
+	{
 		/*	wordEndingClear:	proc
 		*	Modifie le tableau de mots pour ne conserver pour chaque
 		*	mot que le radical (en supprimant les terminaisons issues
@@ -373,15 +391,18 @@ class nuageMots{
 		*/
 		string[] wordEndingFile = readFile(path,true);
 		//Parcours mot par mot dans le texte
-		for(int i=0; i<XWords.Length; i++){
+		for(int i=0; i<XWords.Length; i++)
+		{
 			bool processed=false;
 			//Parcours du tableau de terminaison
-			for(int j=0; j<wordEndingFile.Length && !processed; j++){
+			for(int j=0; j<wordEndingFile.Length && !processed; j++)
+			{
 				string[] wordEnding = wordEndingFile[j].Split(' ');
 				string baseword=XWords[i];
 				string terminaison=wordEnding[1];
 				//Si le mot contient la terminaison
-				if(EndsWith(baseword,terminaison)){//Fonction RECODEE!!!
+				if(EndsWith(baseword,terminaison))//Fonction RECODEE!!!
+				{
 					XWords[i]=wordModify(baseword, terminaison, wordEnding[2], int.Parse(wordEnding[0]));
 					processed=true;
 				}
@@ -390,7 +411,8 @@ class nuageMots{
 		return XWords;
 	}
 
-	public static string wordModify(string baseword, string terminaison, string replace, int m){
+	public static string wordModify(string baseword, string terminaison, string replace, int m)
+	{
 		/*	wordModify:	func:	string
 		*	Modifie un mot en remplaçant sa terminaison ou en
 		*	la supprimant
@@ -408,18 +430,17 @@ class nuageMots{
 		int endingLen=terminaison.Length;
 		string tempWord;
 		//Cas n°1: suppression de la terminaison
-		if(replace=="epsilon"){
+		if(replace=="epsilon")
 			replace="";
-		}
 		tempWord=baseword.Substring(0, wordLen-endingLen)+replace;
 		//Vérification de la validité du radical
-		if(wordPattern(tempWord)>m){
+		if(wordPattern(tempWord)>m)
 			return tempWord;
-		}
 		return baseword;
 	}
 
-	public static bool isVowel(char c){
+	public static bool isVowel(char c)
+	{
 		/*	isVowel:	func:	bool
 		*	Renvoie true si un caractère est
 		*	une voyelle et false si c'est un
@@ -430,14 +451,16 @@ class nuageMots{
 		*	return:			bool
 		*/
 		string vowels="aeiouy";
-		foreach(char v in vowels){
+		foreach(char v in vowels)
+		{
 			if(c==v)
 				return true;
 		}
 		return false;
 	}
 
-	public static int wordPattern(string word){
+	public static int wordPattern(string word)
+	{
 		/*	wordPattern:	func:	int
 		*	Renvoie le nombre d'alternance voyelles-
 		*	consonnes (VC) d'un mot
@@ -480,7 +503,8 @@ class nuageMots{
 		return m;
 	}
 
-	public static bool EndsWith(string mot, string term){
+	public static bool EndsWith(string mot, string term)
+	{
 		/*	EndsWith: func: bool
 		*	Réimplantation de la méthode native EndsWith()
 		*	Indique si une string se termine par une autre string
@@ -495,7 +519,8 @@ class nuageMots{
 		//Si le mot est plus court que la terminaison à chercher
 		if(iStart<0)
 			return false;
-		for(int i=0;i < term.Length; i++){
+		for(int i=0;i < term.Length; i++)
+		{
 			//Si les caractères sont différents
 			if(mot[iStart+i]!=term[i])
 				return false;
@@ -504,7 +529,8 @@ class nuageMots{
 		return true;
 	}
 
-	public static void arrayDisplay(string[] Xarray){
+	public static void arrayDisplay(string[] Xarray)
+	{
 		/*	arrayDisplay:	proc
 		*	[DEBUG]	Affiche un tableau de string
 		*	param:	Xarray:	string[]:	tableau à afficher
@@ -514,45 +540,47 @@ class nuageMots{
 			Console.WriteLine(word);
 	}
 
-	public static void lstLstStrDisplay(List<List<string>> XList){
+	public static void lstLstStrDisplay(List<List<string>> XList)
+	{
 		/*	lstLstStrDisplay:	proc
 		*	[DEBUG]	Affiche une liste de liste de string
 		*	param:	XList:	List<List<string>>:	liste de liste de string à afficher
 		*	local:	lst:	List<string>:	liste temporaire pour le parcours
 		*			str:	string:	string temporaire pour le parcours
 		*/
-		foreach(List<string> lst in XList){
-			foreach(string str in lst){
+		foreach(List<string> lst in XList)
+		{
+			foreach(string str in lst)
 				Console.Write(str+"\t\t");
-			}
 			Console.WriteLine();
 		}
 	}
 
-	public static void dictDictDisplay(Dictionary<string,Dictionary<string,int>> Xdict){
+	public static void dictDictDisplay(Dictionary<string,Dictionary<string,int>> Xdict)
+	{
 		/*	lstLstStrDisplay:	proc
 		*	[DEBUG]	Affiche un dictionnaire de dictionnaire de string-int
 		*	param:	Xdict:	Dictionary<string,Dictionary<string,int>>:	dictionnaire à afficher
 		*	local:	kvp1:	KeyValuePair<string,Dictionary<string,int>>:	Paire clefs-valeurs pour le parcours
 		*			kvp2:	KeyValuePair<string,int>:	Paire clefs-valeurs pour le parcours
 		*/
-		foreach(KeyValuePair<string,Dictionary<string,int>> kvp1 in Xdict){
+		foreach(KeyValuePair<string,Dictionary<string,int>> kvp1 in Xdict)
+		{
 			Console.WriteLine("radical:\t"+kvp1.Key);
-			foreach(KeyValuePair<string,int> kvp2 in kvp1.Value){
+			foreach(KeyValuePair<string,int> kvp2 in kvp1.Value)
 				Console.WriteLine(kvp2.Key+"\t"+kvp2.Value);
-			}
 		}
 	}
 
-	public static void dictDisplay(Dictionary<string,int> Xdict){
+	public static void dictDisplay(Dictionary<string,int> Xdict)
+	{
 		/*	dictDisplay:	proc
 		*	Affiche un dictionnaire
 		*	param:	Xdict:	Dictionary<string,int>:	dictionnaire trié de string et int
 		*	local:	kvp:	KeyValuePair<string,int>:		Paire clefs-valeurs pour le parcours
 		*/
-		foreach(KeyValuePair<string,int> kvp in Xdict){
+		foreach(KeyValuePair<string,int> kvp in Xdict)
 			Console.WriteLine(kvp.Key+": "+kvp.Value);
-		}
 	}
 }
 
