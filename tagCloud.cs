@@ -36,7 +36,7 @@ class nuageMots{
 			Console.WriteLine("Découpage du fichier...");
 			string[] words=readFile(path,false);
 			//Récupération de "mots" inutiles (Numéro de chapitre, livre, auteur, nom en majuscule dans une pièce de théâtre)
-			inTextStopWords(words);
+			string[] inTextemptyWords = inTextStopWords(words);
 			//Tableau en minuscule
 			words=words.Select(str => str.ToLower()).ToArray();
 			//Récupération des racines du fichier + Liste des historiques de chaque mot
@@ -49,8 +49,9 @@ class nuageMots{
 			Console.WriteLine("Construction du dictionnaire final");
 			Dictionary<string,int> occFinal = dictBuildStep2(occDetailed);
 			//Suppression des mots "inutiles"
-			stopWordsClear(occFinal, "./asset/stopwords.txt");
-			stopWordsClear(occFinal, "./asset/inTextStopWords.txt");
+			string[] emptyWords = readFile("./asset/stopwords.txt", false);
+			stopWordsClear(occFinal, emptyWords);
+			stopWordsClear(occFinal, inTextemptyWords);
 			//Mise à jour du dictionnaire commun
 			synthesisUpdate(synthesis,occFinal);
 			//Génération du code HTML pour ce texte
@@ -80,9 +81,8 @@ class nuageMots{
 		Console.WriteLine("Entrer le Prénom, Nom de l'auteur:");
 		string author = Console.ReadLine();
 		//Création du fichier de sortie
-		if(File.Exists("results.html")){
+		if(File.Exists("results.html"))
 			File.Delete("results.html");
-		}
 		StreamReader sr=File.OpenText("template.html");
 		StreamWriter sw=File.CreateText("results.html");
 		string line;
@@ -131,10 +131,9 @@ class nuageMots{
 		*														la trier de manière aléatoire, ou sinon
 		*														le nuage de mot sera trié
 		*			rnd:			Random:						Génère un nombre aléatoire pour le tri
-		*			n:				int:						Permet de récupérer les 15 premiers mots du
-		*														dictionnaire trié par ordre décroissant
+		*			n:				int:						data-weight="n". Rang du mot
 		*			kvp:			KeyValuePair<string,int>:	Paire clef-valeur temporaire pour le parcours par ordre décroissant
-		*			temp:			var:						variable dans laquelle on récupère les éléments de la liste triée aléatoirement
+		*			temp:			var:						query dans laquelle on récupère les éléments de la liste triée aléatoirement
 		*			str:			string:						string temporaire pour le parcours de temp. Ajoutée à OutParts à chaque tour de boucle
 		*	return:	outParts:		string:						code HTML pour un texte
 		*/
@@ -142,17 +141,15 @@ class nuageMots{
 		List<string> RandomParts = new List<string>();
 		Random rnd = new Random();
 		int n=1;
-		foreach(KeyValuePair<string,int> kvp in Xdict.OrderByDescending(key => key.Value)){
-			if(n==16){
-				break;
-			}
+		foreach(KeyValuePair<string,int> kvp in Xdict.OrderByDescending(key => key.Value).Take(15)){
 			RandomParts.Add("<li data-weight=\""+n+"\">"+kvp.Key+"</li>\n");
 			n++;
 		}
+		//Query creation: "Tri" aléatoire de la liste, récupération dans une query
 		var temp = RandomParts.OrderBy(x => rnd.Next(0,15));
-		foreach(string str in temp){
-			outParts+=str;
-		}
+		//Query execution 
+		foreach(string str in temp){outParts+=str;}
+		//Ajout de la fin du code HTML pour ce texte
 		outParts+="</ul>\n</article>";
 		return outParts;
 	}
@@ -272,7 +269,8 @@ class nuageMots{
 		StreamReader sr=File.OpenText(path);
 		string[] words;
 		if(byLine)
-			words = sr.ReadToEnd().Split('\n', StringSplitOptions.RemoveEmptyEntries);
+			//Selon les compilateurs la méthode Split requiert un char ou un char[]
+			words = sr.ReadToEnd().Split(new char[] {'\n'}, StringSplitOptions.RemoveEmptyEntries);
 		else{
 			char[] separators={char.Parse("'"),'%','*','°','–','0','1','2','3','4','5','6','7','8','9','\n','\r','\t','!','#','(',')',',','"','«','»','.','/',':',';','?','[',']','`',' ','-','’','“','”','„','…'};
 			words = sr.ReadToEnd().Split(separators, StringSplitOptions.RemoveEmptyEntries);
@@ -281,37 +279,32 @@ class nuageMots{
 		return words;
 	}
 
-	public static void inTextStopWords(string[] Xtxt){
+	public static string[] inTextStopWords(string[] Xtxt){
 		/*	inTextStopWords:	proc
 		*	Cherche dans le texte des mots qui n'apportent rien
 		*	Pour une pièce de théâtre: Les mots entièrement en majuscule
 		*	Ecris ces mots dans un fichier, qui sera utilisé par stopWordsClear()
 		*	param:	Xtxt:	string[]:		tableau de mots
-		*	local:	sw:		StreamWriter:	Permet d'écrire les mots dans un fichier
+		*	local:	lst:	List<string>	stocke les mots qui sont en majuscules
 		*			i:		int:			indice pour le parcours
 		*/
-		if(File.Exists("./asset/inTextStopWords.txt")){
-			File.Delete("./asset/inTextStopWords.txt");
-		}
-		StreamWriter sw = File.CreateText("./asset/inTextStopWords.txt");
+		List<string> lst = new List<string>();
 		for(int i=0; i< Xtxt.Length; i++){
 			/*Si le mot est entièrement en majuscule*/
 			if(Xtxt[i].ToUpper()==Xtxt[i]){
-				sw.WriteLine(Xtxt[i].ToLower());
+				lst.Add(Xtxt[i].ToLower());
 			}
 		}
-		sw.Close();
+		return lst.Distinct().ToArray();
 	}
 
-	public static void stopWordsClear(Dictionary<string,int> Xdict, string path){
+	public static void stopWordsClear(Dictionary<string,int> Xdict, string[] stopWords){
 		/*	stopWordsClear:	proc
 		*	Supprime les mots vides du dictionnaire d'occurences
 		*	param:	Xdict:		Dictionary<string,int>:	dictionnaire trié d'occurrences
-		*			path:		string:							chemin d'accès du fichier de mots à supprimer
-		*	local:	stopWords:	string[]:						tableau de mots "vides"
-		*			stopWord:	string:							string temporaire pour le parcours
+		*			stopWords:	string[]:						tableau de mots "vides"
+		*	local:	stopWord:	string:							string temporaire pour le parcours
 		*/
-		string[] stopWords = readFile(path,false);
 		foreach(string stopWord in stopWords){
 			if(Xdict.ContainsKey(stopWord))
 				Xdict.Remove(stopWord);
