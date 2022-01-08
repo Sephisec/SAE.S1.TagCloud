@@ -6,7 +6,6 @@ using System.Linq;
 *	Version 4:
 *	modification de Main()			appelle la fonction sur tous les fichiers du répertoire "./txt"
 * 									donne l'état d'avancée de l'analyse
-* 	modification de stopwords.txt	Ajout de mots non utiles à la compréhension
 *	modification de stopWordsClear	prend en param un tableau et non plus un path
 * 	ajout de wordModify()			simplifie la fonction wordEndingClear
 *	ajout de archivage()			simplifie la fonction wordEndingSteps
@@ -25,8 +24,6 @@ class nuageMots{
 			//lecture d'un fichiers du répertoire
 			Console.WriteLine("Découpage du fichier...");
 			string[] words=readFile(path,false);
-			//Tableau en minuscule
-			words=words.Select(str => str.ToLower()).ToArray();
 			//Récupération des racines du fichier + Liste des historiques de chaque mot
 			Console.WriteLine("Récupération des radicaux de "+words.Length+" mots");
 			List<List<string>> wordRoots = wordEndingSteps(words);
@@ -40,12 +37,10 @@ class nuageMots{
 			string[] emptyWords = readFile("./asset/stopwords.txt", false);
 			stopWordsClear(occFinal, emptyWords);
 			//Affichage du dictionnaire
-			dictDisplay(occFinal);
-
+			exportResults(filename,occDetailed, occFinal);
 		}
 		Console.WriteLine("Fin du programme");
 	}
-
 
 	public static Dictionary<string,Dictionary<string,int>> dictBuildStep1(List<List<string>> Xlist){
 		/*	dictBuildStep1:	func:	Dictionary<string,Dictionary<string,int>>
@@ -145,10 +140,10 @@ class nuageMots{
 		StreamReader sr=File.OpenText(path);
 		string[] words;
 		if(byLine)
-			words = sr.ReadToEnd().Split(new char[] {'\n'}, StringSplitOptions.RemoveEmptyEntries);
+			words = sr.ReadToEnd().ToLower().Split(new char[] {'\n'}, StringSplitOptions.RemoveEmptyEntries);
 		else{
-			char[] separators={char.Parse("'"),'%','*','°','–','0','1','2','3','4','5','6','7','8','9','\n','\r','\t','!','#','(',')',',','"','«','»','.','/',':',';','?','[',']','`',' ','-','’','“','”','„','…'};
-			words = sr.ReadToEnd().Split(separators, StringSplitOptions.RemoveEmptyEntries);
+			char[] separators={char.Parse("'"),'%','*','°','–','0','1','2','3','4','5','6','7','8','9','\n','\r','\t','!','#','(',')',',','"','«','»','.','/',':',';','?','[',']','`',' ','-','—','’','“','”','„','…'};
+			words = sr.ReadToEnd().ToLower().Split(separators, StringSplitOptions.RemoveEmptyEntries);
 		}
 		sr.Close();
 		return words;
@@ -409,6 +404,23 @@ class nuageMots{
 		var sample = Xdict.OrderByDescending(key => key.Value).Take(15);
 		foreach(KeyValuePair<string,int> kvp in sample){
 			Console.WriteLine(kvp.Key+": "+kvp.Value);
+		}
+	}
+
+	public static void exportResults(string filename, Dictionary<string,Dictionary<string,int>> occDetailed, Dictionary<string,int> occFinal){
+		if(File.Exists("./results/"+filename+"OUTPUT.txt"))
+			File.Delete("./results/"+filename+"OUTPUT.txt");
+		StreamWriter sw = File.CreateText("./results/"+filename+"OUTPUT.txt");
+		sw.WriteLine("Pour chaque racine, les mots qui ont permis d'arriver à celle-ci\n\n\n");
+		foreach(KeyValuePair<string,Dictionary<string,int>> kvp1 in occDetailed){
+			sw.WriteLine("\nradical:\t"+kvp1.Key+"\nbaseword(s):");
+			foreach(KeyValuePair<string,int> kvp2 in kvp1.Value){
+				sw.WriteLine(kvp2.Key+"\t"+kvp2.Value+" fois");
+			}
+		}
+		sw.WriteLine("\n\n\nLe dictionnaire final (3c)\n\n\n");
+		foreach(KeyValuePair<string,int> kvp in occFinal.OrderByDescending(x => x.Value)){
+			sw.WriteLine(kvp.Key+": "+kvp.Value);
 		}
 	}
 }

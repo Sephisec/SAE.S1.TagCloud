@@ -1,4 +1,4 @@
-au
+﻿au
 aux
 avec
 ce
@@ -210,3 +210,4 @@ parce
 que
 quand
 quelques
+tous

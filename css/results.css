@@ -58,7 +58,7 @@ ul.wordCloud li[data-weight="15"] { --size: 15; }
 
 ul.wordCloud li {
     --size: 1;
-    font-size: calc( (15 - var(--size)) * 0.12rem + 1.2rem);
+    font-size: calc( (15 - var(--size)) * 0.15rem + 1.1rem);
 }
 
 div.synthesis li {
